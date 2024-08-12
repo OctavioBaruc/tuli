@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dibujo de Tulipanes</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            height: 100%;
+            width: 100%;
+        }
+        canvas {
+            border: 1px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="drawingCanvas"></canvas>
+
+    <script>
+        // Configuración del canvas
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Factor de escala para ajustar el tamaño del dibujo en pantallas pequeñas
+        const scaleFactor = Math.min(canvas.width / 800, canvas.height / 600);
+
+        // Función para dibujar un camino
+        function drawPath(path, colour) {
+            ctx.beginPath();
+            ctx.fillStyle = colour;
+
+            for (let i = 0; i < path.length; i++) {
+                const { x, y } = path[i];
+                const canvasX = (x * scaleFactor) + canvas.width / 2;   // Centrar el dibujo en X y aplicar escala
+                const canvasY = canvas.height / 2 + (y * scaleFactor);  // Centrar el dibujo en Y y aplicar escala
+
+                if (i === 0) {
+                    ctx.moveTo(canvasX, canvasY);
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Cargar el archivo JSON
+        fetch('coordinates.json')
+            .then(response => response.json())
+            .then(data => {
+                let paths = [];
+                let currentPath = [];
+                let currentColor = null;
+
+                data.points.forEach((point, index) => {
+                    if (index === 0 || point.color !== currentColor) {
+                        if (currentPath.length > 0) {
+                            paths.push({ path: currentPath, color: currentColor });
+                        }
+                        currentColor = point.color;
+                        currentPath = [];
+                    }
+                    currentPath.push({ x: point.x, y: point.y });
+                });
+
+                if (currentPath.length > 0) {
+                    paths.push({ path: currentPath, color: currentColor });
+                }
+
+                // Dibujar todos los caminos
+                paths.forEach(item => drawPath(item.path, item.color));
+            })
+            .catch(error => console.error('Error cargando el archivo JSON:', error));
+    </script>
+</body>
+</html>
